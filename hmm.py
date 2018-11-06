@@ -132,16 +132,16 @@ class hmm:
                 alpha[t][h] /= scale[t]
 
         # 3. Termination
-        pprob = 0.0
+        log_likelihood = 0.0
         for t in range(T):
-            pprob += math.log(scale[t])
+            log_likelihood += math.log(scale[t])
 
-        return alpha, pprob, scale
+        return alpha, log_likelihood, scale
 
     
     # scale: from the forward_with_scale function
     def backward_with_scale(self, os, T, scale):
-        beta = np.zeros((T, self.H))
+        beta = np.zeros((T, self.H), np.float)
 
         for h in range(self.H):
             beta[T-1][h] = 1.0/scale[T-1]
