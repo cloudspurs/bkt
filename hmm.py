@@ -1,18 +1,19 @@
-# hmm: hidden markov model, aicfe mqg
+# hmm: first order hidden markov model
 
 import math
 import numpy as np
 
 
 class hmm:
-    
     '''
-        pi: hidden state init prob vector
-        hh: a hidden state-transition prob matrix ( p(hidden state b | hidden state a) )
-        ho: observation prob distribution matrix ( p(bversation state a | hidden state a) )
-        h: the number of hidden states
-        o: the number of obeservation states
+        pi: states initial probability vector
+        hh: states transition probability matrix [ p(t+1(state_b) | t(state_a)) ]
+        ho: states to observations emission probability matrix [ p(t(observation_a) | t(state_a)) ]
+        h: the number of states
+        o: the number of obeservations
     '''
+
+
     def __init__(self, pi, hh, ho):
         self.pi = np.array(pi, np.float)
         self.hh = np.array(hh, np.float)
@@ -20,11 +21,15 @@ class hmm:
         self.h = self.hh.shape[0]
         self.o = self.ho.shape[1]
 
+    
+    def print_parameters(self):
+        print('pi: ', self.pi)
+        print('hh: ', self.hh)
+        print('ho: ', self.ho)
 
-    # computing the prob of observation sequence given a HMM model parameters
+    # given observation o=(o1, o2,..., ot) and model m=(pi, hh, ho), compute p(o|m)
     # os: observation sequence
     # os_length: the length of os
-    # Todo: check data, exception handle
     def forward(self, os, os_length):
         alpha = np.zeros((os_length, self.h))
 
@@ -34,8 +39,8 @@ class hmm:
 
         # 2. Induction
         # t: time index
-        # i: time t+1 hidden state index
-        # j: time t hidden state index
+        # i: time t+1 states index
+        # j: time t states index
         for t in range(1, os_length):
             for i in range(self.h):
                 sum_prob = 0.0
@@ -45,10 +50,10 @@ class hmm:
 
         # 3. Termination
         prob = 0.0
-        for i in range(self.h):
-            prob += alpha[os_length-1][i]
+        for h in range(self.h):
+            prob += alpha[os_length-1][h]
 
-        return prob 
+        return prob, alpha
 
 
     def backward(self, os, os_length):
@@ -68,7 +73,7 @@ class hmm:
         for h in range(self.h):
             prob += beta[0][h]
 
-        return beta, prob
+        return prob, beta
 
 
     # seeking the most probable hidden state sequence
@@ -147,8 +152,6 @@ class hmm:
         for h in range(self.h):
             beta[os_length-1][h] = 1.0/scale[os_length-1]
 
-        # i: time t
-        # j: time t+1
         for t in range(os_length-2, -1, -1):
             for i in range(self.h):
                 sum_prob = 0.0
@@ -244,6 +247,8 @@ class hmm:
         return alpha
 
 
+    # 1. compute next time states distribution
+    # 2. compute next time observations distribution
     def predict_next_steps(self, alpha, os_length):
         # next time states probability
         states_predictions = np.zeros((os_length, self.h), np.float)

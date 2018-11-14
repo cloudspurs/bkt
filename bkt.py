@@ -59,28 +59,11 @@ class bkt:
 
     # after baum_welch function, update bkt parameters
     def update_bkt_parameters(self, hmm):
-        self.init = hmm.pi[1]
-        self.learn = hmm.hh[0][1]
-        self.forget = hmm.hh[1][0]
-        self.slip = hmm.ho[1][0]
-        self.guess = hmm.ho[0][1]
+        self.init = self.hmm_model.pi[1]
+        self.learn = self.hmm_model.hh[0][1]
+        self.forget = self.hmm_model.hh[1][0]
+        self.slip = self.hmm_model.ho[1][0]
+        self.guess = self.hmm_model.ho[0][1]
         
     
-a_model = bkt(0.1, 0.5, 0.0, 0.1, 0.05)
-
-os = [0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1]
-
-print("init parameters:")
-a_model.print_parameters()
-
-print(a_model.forward(os))
-print(a_model.viterbi(os))
-
-a_model.baum_welch(os, 0.001)
-
-a_model.print_parameters()
-
-predicts, obs = a_model.predict_next_step(os, 0.01)
-print("predicts: ", predicts)
-print("obs: ", obs)
 
