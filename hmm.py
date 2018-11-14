@@ -53,7 +53,7 @@ class hmm:
         for h in range(self.h):
             prob += alpha[os_length-1][h]
 
-        return prob, alpha
+        return prob
 
 
     def backward(self, os, os_length):
@@ -71,9 +71,9 @@ class hmm:
 
         prob = 0.0
         for h in range(self.h):
-            prob += beta[0][h]
+            prob += self.pi[h] * self.ho[h][os[0]] * beta[0][h]
 
-        return prob, beta
+        return prob
 
 
     # seeking the most probable hidden state sequence
