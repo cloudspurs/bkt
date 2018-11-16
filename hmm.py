@@ -126,8 +126,8 @@ class hmm:
             alpha[0][h] = self.pi[h] * self.ho[h, os[0]]
             scale[0] += alpha[0][h]
 
-        for i in range(self.h):
-            alpha[0][i] /= scale[0]
+        for h in range(self.h):
+            alpha[0][h] /= scale[0]
 
         # 2. Induction
         for t in range(1, os_length):

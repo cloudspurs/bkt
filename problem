@@ -1,0 +1,5 @@
+1. predict
+2. why compute loglikelihood for all scale
+3. beta[T-1][i] may > 0
+4. why backward use forward's scale
+5. ensure p_forget = o
