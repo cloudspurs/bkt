@@ -137,7 +137,7 @@ class hmm:
             for h in range(self.h):
                 alpha[t][h] /= scale[t]
 
-        # 3. os_lengthermination
+        # 3. Termination
         log_likelihood = 0.0
         for t in range(os_length):
             log_likelihood += math.log(scale[t])
