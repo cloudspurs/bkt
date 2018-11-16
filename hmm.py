@@ -24,8 +24,12 @@ class hmm:
     
     def print_parameters(self):
         print('pi: ', self.pi)
-        print('hh: ', self.hh)
-        print('ho: ', self.ho)
+        print('hh: ')
+        print(self.hh)
+        print('ho: ')
+        print(self.ho)
+        print('\n')
+
 
     # given observation o=(o1, o2,..., ot) and model m=(pi, hh, ho), compute p(o|m)
     # os: observation sequence
@@ -194,7 +198,7 @@ class hmm:
         return xi
 
 
-    # optimizing model parameters
+    # function: optimizing model parameters
     def baum_welch(self, os, os_length, delta):
         loop_number = 0
         
@@ -246,7 +250,7 @@ class hmm:
         #return self.pi, self.hh, self.ho, loop_number, alpha
         return alpha
 
-
+    # fuction: predict next observation probability
     # 1. compute next time states distribution
     # 2. compute next time observations distribution
     def predict_next_steps(self, alpha, os_length):

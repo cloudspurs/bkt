@@ -50,11 +50,12 @@ class bkt:
     # def baum_welch(self, observation_sequence, iterations):
 
     def print_parameters(self):
-        print('init: ', self.init)
-        print('learn: ', self.learn)
-        print('forget: ', self.forget)
-        print('slip: ', self.slip)
-        print('guess: ', self.guess)
+        print('bkt patameters:')
+        print('\tinit:\t', self.init)
+        print('\tlearn:\t', self.learn)
+        print('\tforget:\t', self.forget)
+        print('\tslip:\t', self.slip)
+        print('\tguess:\t', self.guess, '\n')
 
 
     # after baum_welch function, update bkt parameters
