@@ -1,5 +1,8 @@
 1. predict
+    how to estimate parameter 
+    how to predict
 2. why compute loglikelihood for all scale
 3. beta[T-1][i] may > 0
 4. why backward use forward's scale
-5. ensure p_forget = o
+5. ensure p_forget = 0
+6. 0.001 + 0.999 * x
