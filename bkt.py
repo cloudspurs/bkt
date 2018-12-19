@@ -1,70 +1,113 @@
-# BKT(Bayesian Knowledge Tracing) Model
+# BKT (Bayesian Knowledge Tracing) Model
 
 import hmm
+import numpy as np
+import random
 
-
-# BKT model for one knowledge
 class bkt:
 
-    def __init__(self, pi, pl, pf, ps, pg):
+    def __init__(self, pi, pt, pf, ps, pg):
         self.init = pi
-        self.learn = pl
+        self.transit = pt
         self.forget = pf
         self.slip = ps
         self.guess = pg
-        
+
         '''
-            pi [0, 1]
-            hh [0,0 0,1
-                1,0 1,1]
-            ho [0,0 0,1
-                1,0 1,1]
+            bkt parameters in matrix form
+
+            prior: 
+                 unknown,   known
+                [1-init,    init]
+
+            hh:  
+                                  to unknown    to known 
+                from unknown    [[1-transit,    transit], 
+                from known       [forget,       1-forget]]
+            ho: 
+                          wrong     right 
+                unknown [[1-guess,  guess],
+                known    [slip,     1-slip]]
         '''
-        hmm_pi = [1.0-self.init, self.init]
-        hmm_hh = [[1.0-self.learn, self.learn], [self.forget, 1.0-self.forget]]
-        hmm_ho = [[1.0-self.guess, self.guess], [self.slip, 1.0-self.slip]]
-        self.hmm_model = hmm.hmm(hmm_pi, hmm_hh, hmm_ho)
+        self.pi = np.array(([1.0-self.init, self.init]), np.float)
 
+        self.hh = np.array(([[1.0-self.transit, self.transit],
+                             [self.forget,      1.0-self.forget]]), np.float)
 
-    def forward(self, observation_sequence):
-        return self.hmm_model.forward(observation_sequence, len(observation_sequence))
-        
+        self.ho = np.array(([[1.0-self.guess,   self.guess],
+                             [self.slip,        1.0-self.slip]]), np.float)
 
-    def viterbi(self, observation_sequence):
-        return self.hmm_model.viterbi(observation_sequence, len(observation_sequence))
-
-    
-    def baum_welch(self, observation_sequence, delta):
-        alpha = self.hmm_model.baum_welch(observation_sequence, len(observation_sequence), delta)
-        self.update_bkt_parameters(self.hmm_model)
-        return alpha
-    
-
-    def predict_next_step(self, os, delta):
-        alpha = self.baum_welch(os, delta)
-        predicts, obs = self.hmm_model.predict_next_steps(alpha, len(os))
-        return predicts, obs
+        self.hmm = hmm.hmm(self.pi, self.hh, self.ho)
 
 
     # Todo
-    # def baum_welch(self, observation_sequence, iterations):
+    def random_model(self):
+        pi = random.random()
+        pt = random.random()
+        pf = random.random()
+        pg = random.random()
+        ps = random.random()
+        self.__init__(pi, pt, pf, pg, ps)
 
-    def print_parameters(self):
-        print('bkt patameters:')
-        print('\tinit:\t', self.init)
-        print('\tlearn:\t', self.learn)
-        print('\tforget:\t', self.forget)
-        print('\tslip:\t', self.slip)
-        print('\tguess:\t', self.guess, '\n')
+    # ss: state sequence
+    # os: observation sequence
+    def synthetic_data(self, length):
+        ss = np.zeros(length, np.int)
+        os = np.zeros(length, np.int)
+
+        next_state = self.pi
+
+        for l in range(length):
+            ss[l] = next_state[0] < random.random()
+            os[l] = (ss[l] and self.slip or 1-self.guess) < random.random()
+            next_state = self.hh[ss[l]]
+
+        return ss, os
 
 
-    # after baum_welch function, update bkt parameters
-    def update_bkt_parameters(self, hmm):
-        self.init = self.hmm_model.pi[1]
-        self.learn = self.hmm_model.hh[0][1]
-        self.forget = self.hmm_model.hh[1][0]
-        self.slip = self.hmm_model.ho[1][0]
-        self.guess = self.hmm_model.ho[0][1]
+    # os: observation_sequence
+    def forward(self, os):
+        return self.hmm.forward(os) 
         
+
+    def viterbi(self, os):
+        return self.hmm.viterbi(os)
+
+    
+    # estimate bkt parameters
+    def baum_welch(self, os, delta, max_iteration=float('inf')):
+        alpha, number = self.hmm.baum_welch(os, delta, max_iteration)
+        self.update_bkt_parameters(self.hmm)
+        return alpha
     
 
+    # predict the probability of answered correct next step 
+    # alpha: return from baum_welch function
+    def predict(self, os, alpha):
+        state_predicts, os_predicts = self.hmm.predict_next_steps(alpha, len(os))
+        return state_predicts, os_predicts
+
+
+    # after run baum_welch function, update bkt parameters
+    def update_bkt_parameters(self, hmm):
+        self.pi = self.hmm.pi
+        self.hh = self.hmm.hh 
+        self.ho = self.hmm.ho
+        self.init = self.pi[1]
+        self.transit = self.hh[0][1]
+        self.forget = self.hh[1][0]
+        self.slip = self.ho[1][0]
+        self.guess = self.ho[0][1]
+
+
+    def print_parameters(self):
+        print('\nbkt patameters:')
+        print('\tinit:\t', self.init)
+        print('\tlearn:\t', self.transit)
+        print('\tforget:\t', self.forget)
+        print('\tslip:\t', self.slip)
+        print('\tguess:\t', self.guess)
+        print('\npi\n', self.pi)
+        print('\nhh\n', self.hh)
+        print('\nho\n', self.ho)
+        
