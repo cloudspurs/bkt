@@ -1,8 +1,9 @@
 BKT - Bayesian Knowledge Tracing
 
-Python implementation of the Bayesian Knowledge Tracing algorithm, modeling sudent cognitive mastery from problem solving sequences.
+Python implementation of the Bayesian Knowledge Tracing algorithm,
+modeling sudent cognitive mastery from problem solving sequences.
 
-Thanks for the behind resources:
+Thanks for the follow resources:
     1.
     2.
     3.

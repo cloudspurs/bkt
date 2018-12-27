@@ -28,7 +28,34 @@ class hmm:
         print('\nho:')
         print(self.ho)
 
+
+    def random_model(self):
+        sum_pi = 0.0
+        for h in range(self.h):
+            self.pi[h] = random.random()
+            sum_pi += self.pi[h]
+        for h in range(self.h):
+            self.pi[h] /= sum_pi
+
+        for i in range(self.h):
+            sum_hh = 0.0
+            for j in range(self.h):
+                self.hh[i][j] = random.random()
+                sum_hh += self.hh[i][j]
+            
+            for j in range(self.h):
+                self.hh[i][j] /= sum_hh
+
+            sum_ho = 0.0
+            for j in range(self.o):
+                self.ho[i][j] = random.random()
+                sum_ho += self.ho[i][j]
+
+            for j in range(self.o):
+                self.ho[i][j] /= sum_ho
+
     
+    # ss: state sequence
     def synthetic_data(self, length):
         ss = np.zeros(length, np.int)
         os = np.zeros(length, np.int)
@@ -86,7 +113,7 @@ class hmm:
             for i in range(self.h):
                 sum_prob = 0.0
                 for j in range(self.h):
-                    sum_prob+= self.hh[i][j] * self.ho[j][os[t+1]] * beta[t+1][j] 
+                    sum_prob += self.hh[i][j] * self.ho[j][os[t+1]] * beta[t+1][j] 
                 beta[t][i] = sum_prob
 
         prob = 0.0
@@ -183,11 +210,11 @@ class hmm:
             beta[os_length-1][h] = 1.0 / scale[os_length-1]
 
         for t in range(os_length-2, -1, -1):
-            for h in range(self.h):
+            for i in range(self.h):
                 sum_prob = 0.0
                 for j in range(self.h):
-                    sum_prob += self.hh[h][j] * self.ho[j][os[t+1]] * beta[t+1][j] 
-                beta[t][h] = sum_prob / scale[t]
+                    sum_prob += self.hh[i][j] * self.ho[j][os[t+1]] * beta[t+1][j] 
+                beta[t][i] = sum_prob / scale[t]
 
         return beta 
 
@@ -231,11 +258,11 @@ class hmm:
 
         iteration_number = 0
         
-        log_prob_prev = float('-inf')
+        log_likelihood_prev = float('-inf')
 
         while True:
             # compute all parameters
-            alpha, log_prob, scale = self.forward_with_scale(os)
+            alpha, log_likelihood, scale = self.forward_with_scale(os)
             beta = self.backward_with_scale(os, scale)
             gamma = self.computer_gamma(os_length, alpha, beta)
             xi = self.computer_xi(os, alpha, beta)
@@ -260,6 +287,7 @@ class hmm:
                     self.hh[i][j] = numerator_A / denominator_A
 
                 denominator_B = denominator_A + gamma[os_length-1][i]
+
                 for o in range(self.o):
                     numerator_B = 0.0
                     for t in range(os_length):
@@ -269,15 +297,15 @@ class hmm:
                     #self.ho[i][k] = 0.001 + 0.999 * numerator_B / denominator_B
                     self.ho[i][o] = numerator_B / denominator_B
 
-            now_delta = log_prob - log_prob_prev
-            log_prob_prev = log_prob
+            now_delta = log_likelihood - log_likelihood_prev
+            log_likelihood_prev = log_likelihood
             iteration_number += 1
 
             if (now_delta <= delta) or (iteration_number >= max_iteration):
                 break
 
         #return self.pi, self.hh, self.ho, loop_number, alpha
-        return alpha, iteration_number 
+        return alpha, log_likelihood, iteration_number 
 
     # fuction: predict next observation probability
     # 1. compute next time states distribution

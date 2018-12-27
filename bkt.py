@@ -42,27 +42,26 @@ class bkt:
 
     # Todo
     def random_model(self):
-        pi = random.random()
-        pt = random.random()
-        pf = random.random()
-        pg = random.random()
-        ps = random.random()
-        self.__init__(pi, pt, pf, pg, ps)
+        self.hmm.random_model()
+        self.update_bkt_parameters()
+
 
     # ss: state sequence
     # os: observation sequence
     def synthetic_data(self, length):
-        ss = np.zeros(length, np.int)
-        os = np.zeros(length, np.int)
+        return self.hmm.synthetic_data(length)
 
-        next_state = self.pi
+        #ss = np.zeros(length, np.int)
+        #os = np.zeros(length, np.int)
 
-        for l in range(length):
-            ss[l] = next_state[0] < random.random()
-            os[l] = (ss[l] and self.slip or 1-self.guess) < random.random()
-            next_state = self.hh[ss[l]]
+        #next_state = self.pi
 
-        return ss, os
+        #for l in range(length):
+        #    ss[l] = next_state[0] < random.random()
+        #    os[l] = (ss[l] and self.slip or 1-self.guess) < random.random()
+        #    next_state = self.hh[ss[l]]
+
+        #return ss, os
 
 
     # os: observation_sequence
@@ -76,8 +75,8 @@ class bkt:
     
     # estimate bkt parameters
     def baum_welch(self, os, delta, max_iteration=float('inf')):
-        alpha, number = self.hmm.baum_welch(os, delta, max_iteration)
-        self.update_bkt_parameters(self.hmm)
+        alpha, log_likelihood, number = self.hmm.baum_welch(os, delta, max_iteration)
+        self.update_bkt_parameters()
         return alpha
     
 
@@ -89,7 +88,7 @@ class bkt:
 
 
     # after run baum_welch function, update bkt parameters
-    def update_bkt_parameters(self, hmm):
+    def update_bkt_parameters(self):
         self.pi = self.hmm.pi
         self.hh = self.hmm.hh 
         self.ho = self.hmm.ho
