@@ -6,12 +6,12 @@ import random
 
 class bkt:
 
-    def __init__(self, pi, pt, pf, ps, pg):
+    def __init__(self, pi, pt, pf, pg, ps):
         self.init = pi
         self.transit = pt
         self.forget = pf
-        self.slip = ps
         self.guess = pg
+        self.slip = ps
 
         '''
             bkt parameters in matrix form
@@ -42,8 +42,20 @@ class bkt:
 
     # Todo
     def random_model(self):
-        self.hmm.random_model()
-        self.update_bkt_parameters()
+        self.init = random.random()
+        self.transit = random.random()
+        self.slip = random.random()
+        self.guess = random.random()
+
+        self.pi = np.array(([1.0-self.init, self.init]), np.float)
+
+        self.hh = np.array(([[1.0-self.transit, self.transit],
+                             [self.forget,      1.0-self.forget]]), np.float)
+
+        self.ho = np.array(([[1.0-self.guess,   self.guess],
+                             [self.slip,        1.0-self.slip]]), np.float)
+
+        self.hmm = hmm.hmm(self.pi, self.hh, self.ho)
 
 
     # ss: state sequence
@@ -74,16 +86,16 @@ class bkt:
 
     
     # estimate bkt parameters
-    def baum_welch(self, os, delta, max_iteration=float('inf')):
-        alpha, log_likelihood, number = self.hmm.baum_welch(os, delta, max_iteration)
+    def baum_welch(self, os, delta=0.001, max_iteration=float('inf')):
+        log_likelihood, number, alpha = self.hmm.baum_welch(os, delta, max_iteration)
         self.update_bkt_parameters()
-        return alpha
+        return log_likelihood, number, alpha
     
 
     # predict the probability of answered correct next step 
     # alpha: return from baum_welch function
     def predict(self, os, alpha):
-        state_predicts, os_predicts = self.hmm.predict_next_steps(alpha, len(os))
+        state_predicts, os_predicts = self.hmm.predict_next_steps(len(os), alpha)
         return state_predicts, os_predicts
 
 
@@ -95,17 +107,18 @@ class bkt:
         self.init = self.pi[1]
         self.transit = self.hh[0][1]
         self.forget = self.hh[1][0]
-        self.slip = self.ho[1][0]
         self.guess = self.ho[0][1]
+        self.slip = self.ho[1][0]
 
 
     def print_parameters(self):
         print('\nbkt patameters:')
-        print('\tinit:\t', self.init)
-        print('\tlearn:\t', self.transit)
-        print('\tforget:\t', self.forget)
-        print('\tslip:\t', self.slip)
-        print('\tguess:\t', self.guess)
+        print('\tinit:\t', "{:.3f}".format(self.init))
+        print('\ttran:\t', "{:.3f}".format(self.transit))
+        print('\tforget:\t', "{:.3f}".format(self.forget))
+        print('\tguess:\t', "{:.3f}".format(self.guess))
+        print('\tslip:\t', "{:.3f}".format(self.slip))
+        np.set_printoptions(precision=3, suppress=True)
         print('\npi\n', self.pi)
         print('\nhh\n', self.hh)
         print('\nho\n', self.ho)

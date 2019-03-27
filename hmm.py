@@ -5,6 +5,7 @@ import numpy as np
 import random
 
 class hmm:
+    "HMM: first order Hidden Markov Model"
 
     '''
         pi: states initial probability vector
@@ -22,6 +23,7 @@ class hmm:
 
     
     def print_parameters(self):
+        np.set_printoptions(precision=3, suppress=True)
         print('\npi:', self.pi)
         print('\nhh:')
         print(self.hh)
@@ -56,6 +58,7 @@ class hmm:
 
     
     # ss: state sequence
+    # os: observation sequence
     def synthetic_data(self, length):
         ss = np.zeros(length, np.int)
         os = np.zeros(length, np.int)
@@ -85,8 +88,8 @@ class hmm:
 
         # 2. Induction
         # t: time index
-        # i: time t+1 states index
-        # j: time t states index
+        # i: time t states index
+        # j: time t-1 states index
         for t in range(1, os_length):
             for i in range(self.h):
                 sum_prob = 0.0
@@ -207,6 +210,7 @@ class hmm:
         beta = np.zeros((os_length, self.h), np.float)
 
         for h in range(self.h):
+            # (1.0 / scale[os_length-1]) maybe > 1.0
             beta[os_length-1][h] = 1.0 / scale[os_length-1]
 
         for t in range(os_length-2, -1, -1):
@@ -217,21 +221,6 @@ class hmm:
                 beta[t][i] = sum_prob / scale[t]
 
         return beta 
-
-
-    def computer_gamma(self, os_length, alpha, beta):
-        gamma = np.zeros((os_length, self.h), np.float)
-
-        for t in range(os_length):
-            denominator = 0.0
-            for h in range(self.h):
-                gamma[t][h] = alpha[t][h] * beta[t][h]
-                denominator += gamma[t][h]
-
-            for h in range(self.h):
-                gamma[t][h] = gamma[t][h] / denominator
-
-        return gamma
 
 
     def computer_xi(self, os, alpha, beta):
@@ -252,8 +241,23 @@ class hmm:
         return xi
 
 
+    def computer_gamma(self, os_length, alpha, beta):
+        gamma = np.zeros((os_length, self.h), np.float)
+
+        for t in range(os_length):
+            denominator = 0.0
+            for h in range(self.h):
+                gamma[t][h] = alpha[t][h] * beta[t][h]
+                denominator += gamma[t][h]
+
+            for h in range(self.h):
+                gamma[t][h] = gamma[t][h] / denominator
+
+        return gamma
+
+
     # function: estimate model parameters
-    def baum_welch(self, os, delta, max_iteration=float('inf')):
+    def baum_welch(self, os, delta=0.001, max_iteration=float('inf')):
         os_length = len(os)
 
         iteration_number = 0
@@ -264,8 +268,8 @@ class hmm:
             # compute all parameters
             alpha, log_likelihood, scale = self.forward_with_scale(os)
             beta = self.backward_with_scale(os, scale)
-            gamma = self.computer_gamma(os_length, alpha, beta)
             xi = self.computer_xi(os, alpha, beta)
+            gamma = self.computer_gamma(os_length, alpha, beta)
 
             # reestimate frequency of hidden state i in time t=0
             for i in range(self.h):
@@ -305,12 +309,12 @@ class hmm:
                 break
 
         #return self.pi, self.hh, self.ho, loop_number, alpha
-        return alpha, log_likelihood, iteration_number 
+        return log_likelihood, iteration_number, alpha 
 
     # fuction: predict next observation probability
     # 1. compute next time states distribution
     # 2. compute next time observations distribution
-    def predict_next_steps(self, alpha, os_length):
+    def predict_next_steps(self, os_length, alpha):
         # next time states probability
         states_predictions = np.zeros((os_length, self.h), np.float)
         # next time observations probability
