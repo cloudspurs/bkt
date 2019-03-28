@@ -175,7 +175,7 @@ class hmm:
         
         # 1. Initialization, compute alpha(0, h)
         for h in range(self.h):
-            alpha[0][h] = self.pi[h] * self.ho[h, os[0]]
+            alpha[0][h] = self.pi[h] * self.ho[h][os[0]]
             scale[0] += alpha[0][h]
 
         for h in range(self.h):
