@@ -23,7 +23,7 @@ class hmm:
 
     
     def print_parameters(self):
-        np.set_printoptions(precision=3, suppress=True)
+        np.set_printoptions(precision=6, suppress=True)
         print('\npi:', self.pi)
         print('\nhh:')
         print(self.hh)
@@ -194,11 +194,12 @@ class hmm:
                 alpha[t][h] /= scale[t]
 
         # 3. Termination
-        log_likelihood = math.log(scale[os_length-1])
+        log_likelihood = 0.0
+        
+#        log_likelihood = math.log(scale[os_length-1])
 
-#        log_likelihood = 0.0
-#        for t in range(os_length):
-#            log_likelihood += math.log(scale[t])
+        for t in range(os_length):
+            log_likelihood += math.log(scale[t])
 
         return alpha, log_likelihood, scale
 
@@ -258,6 +259,10 @@ class hmm:
 
     # function: estimate model parameters
     def baum_welch(self, os, delta=0.001, max_iteration=float('inf')):
+        pi = np.zeros((self.h), np.float)
+        hh = np.zeros((self.h, self.h), np.float)
+        ho = np.zeros((self.h, self.o), np.float)
+        
         os_length = len(os)
 
         iteration_number = 0
@@ -273,8 +278,8 @@ class hmm:
 
             # reestimate frequency of hidden state i in time t=0
             for i in range(self.h):
-                #self.pi[i] = 0.001 + 0.999 * gamma[0][i]
-                self.pi[i] = gamma[0][i]
+                pi[i] = 0.001 + 0.999 * gamma[0][i]
+                #self.pi[i] = gamma[0][i]
 
             # reestimate transition matrix and symbol prob in each state
             for i in range(self.h):
@@ -287,8 +292,8 @@ class hmm:
                     for t in range(os_length-1):
                         numerator_A += xi[t][i][j]
 
-                    #self.hh[i][j] = 0.001 + 0.999 * numerator_A / denominator_A
-                    self.hh[i][j] = numerator_A / denominator_A
+                    hh[i][j] = 0.001 + 0.999 * numerator_A / denominator_A
+                    #self.hh[i][j] = numerator_A / denominator_A
 
                 denominator_B = denominator_A + gamma[os_length-1][i]
 
@@ -298,8 +303,8 @@ class hmm:
                         if os[t] == o:
                             numerator_B += gamma[t][i]
                         
-                    #self.ho[i][k] = 0.001 + 0.999 * numerator_B / denominator_B
-                    self.ho[i][o] = numerator_B / denominator_B
+                    ho[i][o] = 0.001 + 0.999 * numerator_B / denominator_B
+                    #self.ho[i][o] = numerator_B / denominator_B
 
             now_delta = log_likelihood - log_likelihood_prev
             log_likelihood_prev = log_likelihood
@@ -308,8 +313,35 @@ class hmm:
             if (now_delta <= delta) or (iteration_number >= max_iteration):
                 break
 
-        #return self.pi, self.hh, self.ho, loop_number, alpha
-        return log_likelihood, iteration_number, alpha 
+#        return log_likelihood, iteration_number, alpha 
+        return pi, hh, ho
+#        return log_likelihood, iteration_number, alpha, self.pi, self.hh, self.ho
+
+
+    # multiple obersation sequences baum welch algorithm
+    def multi_os_baum_welch(self, os, delta=0.001, max_iteration=float('inf')):
+        os_num = len(os)
+
+        all_pi = np.zeros((os_num, self.h), np.float)
+        all_hh = np.zeros((os_num, self.h, self.h), np.float)
+        all_ho = np.zeros((os_num, self.h, self.o), np.float)
+
+        for i in range(os_num):
+            pi, hh, ho = self.baum_welch(os[i], delta, max_iteration)
+            all_pi[i] = pi
+            all_hh[i] = hh
+            all_ho[i] = ho
+        
+            print(pi, hh, ho)
+
+        mean_pi = np.mean(all_pi, 0)
+        mean_hh = np.mean(all_hh, 0)
+        mean_ho = np.mean(all_ho, 0)
+
+        print(mean_pi, mean_hh, mean_ho)
+
+        return mean_pi, mean_hh, mean_ho
+
 
     # fuction: predict next observation probability
     # 1. compute next time states distribution
